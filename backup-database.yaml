@@ -1,0 +1,20 @@
+---
+  - hosts: wordpress
+    become: yes
+    tasks:
+      - name: Create a directory for backup
+        file:
+          path: /tmp/backup_wordpress
+          state: directory
+          mode: '0755'
+      - name: Create backup
+        mysql_db:
+          name: wordpress
+          state: dump
+          target: /tmp/backup_wordpress/wordpress.sql
+      - name: Copy directory wordpress
+        copy:
+          src: "/var/www/wordpress/"
+          dest: "/tmp/backup_wordpress/"
+          remote_src: yes 
+          directory_mode: yes    

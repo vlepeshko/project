@@ -1,0 +1,14 @@
+---
+# Webserver deployemnt
+- hosts: all_hosts
+  become: yes
+  gather_facts: True
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal) 
+- hosts: wordpress
+  roles:
+    - server
+    - php
+    - mysql
+    - wordpress

@@ -1,0 +1,107 @@
+```
+pipeline { 
+
+    agent { node { label 'Node02_project' } }  
+
+    stages {
+
+        stage('Create dump mysql database') { 
+
+            steps { 
+
+                sh """
+
+                mkdir -p /tmp/backup_wordpress/wordpress/ && mysqldump -u wordpress  wordpress -prandompassword> /tmp/backup_wordpress/wordpress/database_dump_latest.sql
+
+                """
+
+            }    
+
+        }
+    
+        stage('backup folder') { 
+
+            steps { 
+
+                sh """ 
+
+                cp -r /var/www/wordpress/ /tmp/backup_wordpress/wordpress/"""
+
+            }
+            
+        }
+        stage('archive folder') { 
+
+            steps { 
+
+                sh """
+            tar -cvf /tmp/backup_wordpress/backup_wordpress.tar /tmp/backup_wordpress/wordpress/ && rm -R /tmp/backup_wordpress/wordpress/ """
+
+
+            }
+            
+        }
+        stage('delete directory wordpress') { 
+
+            steps { 
+
+                sh """ sudo rm -rf /var/www/wordpress/wp-admin/ && sudo rm -rf /var/www/wordpress/wp-includes/
+                     """
+            }    
+        }
+        stage('downoald new version wordpress') { 
+
+            steps { 
+
+                sh """ 
+
+                   cd /tmp/ && wget https://wordpress.org/wordpress-5.2.tar.gz  """
+            }    
+        }
+        
+         stage('unzip archive') { 
+
+            steps { 
+
+                sh """ cd /tmp/ &&  tar -xvf wordpress-5.2.tar.gz """
+
+            }    
+
+        }
+          stage('copy folder to directory wordpress') { 
+
+            steps { 
+
+                sh """ 
+
+               sudo cp -r /tmp/wordpress/ /var/www/
+
+                """
+            }  
+         }
+         stage('remove archive and folder') { 
+
+            steps { 
+
+                sh """ 
+
+                cd /tmp/ &&  sudo rm -rf wordpress wordpress-5.2.tar.gz
+
+
+                """
+
+            }  
+
+         }
+
+    }
+         post {
+            success {
+                slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+            }
+            failure {
+                slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+            }
+        }
+}
+```
